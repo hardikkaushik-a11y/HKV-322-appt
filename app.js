@@ -7,6 +7,10 @@
 // for this flat, so nothing here should be read as approved.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { travertine, paint, normalFrom } from './textures.js';
+import { buildInterior } from './interior.js';
 
 const zone = await (await fetch('./assets/layout/rooms.json')).json();
 const rooms = Object.entries(zone.rooms).map(([id, r]) => ({ id, ...r }));
@@ -38,8 +42,8 @@ host.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new THREE.Scene(), 0.05).texture;
-scene.environmentIntensity = 0.55;
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.045).texture;
+scene.environmentIntensity = 0.6;
 
 const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.1, 200);
 const ISO_AZ = THREE.MathUtils.degToRad(214), ISO_EL = THREE.MathUtils.degToRad(42);
@@ -54,25 +58,30 @@ controls.minDistance = SPAN * 0.18; controls.maxDistance = SPAN * 2.4;
 controls.minPolarAngle = THREE.MathUtils.degToRad(8);
 controls.maxPolarAngle = THREE.MathUtils.degToRad(85);
 
-const hemi = new THREE.HemisphereLight(0xfff1e0, 0x2a221b, 0.55);
+const hemi = new THREE.HemisphereLight(0xfff1e0, 0x342c22, 0.62);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xffe9cf, 2.6);
+const sun = new THREE.DirectionalLight(0xffdfad, 3.1);
 sun.position.set(-14, 22, 16);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.bias = -0.0004;
 Object.assign(sun.shadow.camera, { left: -SPAN, right: SPAN, top: SPAN, bottom: -SPAN, near: 1, far: 60 });
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0xdce6ff, 0.5);
+const fill = new THREE.DirectionalLight(0xdce6ff, 0.42);
 fill.position.set(12, 14, -10);
 scene.add(fill);
 
 // -------------------------------------------------------------- materials
+// Cream paint and beige floor tile, read off the two photos of the flat as it
+// stands today; the same base runs through every room until other rooms get their
+// own reference photos or design.
+const floorTex = travertine({ base: 0xE7DFCC, tile: 0.5, seed: 71 });
+const wallTex = paint({ base: 0xF1ECE0, seed: 73 });
 const M = {
   plinth: new THREE.MeshStandardMaterial({ color: 0x1c1815, roughness: 0.9 }),
-  floor:  new THREE.MeshStandardMaterial({ color: 0xE4DCCD, roughness: 0.55 }),
-  wall:   new THREE.MeshStandardMaterial({ color: 0xEFE9DD, roughness: 0.85 }),
-  wallEst:new THREE.MeshStandardMaterial({ color: 0xEFE9DD, roughness: 0.85, opacity: 0.72, transparent: true }),
+  floor:  new THREE.MeshPhysicalMaterial({ map: floorTex, normalMap: normalFrom(floorTex, 1.4), roughness: 0.42, clearcoat: 0.06 }),
+  wall:   new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.88 }),
+  wallEst:new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.88, opacity: 0.72, transparent: true }),
   section:new THREE.MeshStandardMaterial({ color: 0x2A2521, roughness: 0.9 }),
 };
 
@@ -90,6 +99,7 @@ function prism(outer, z0, z1, mat, capMat) {
 function mesh(geo, mat, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; return m;
 }
+const rbox = (w, h, d, r = 0.02) => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3));
 // point-in-polygon on plan rings (ray casting)
 function inRing(pt, ring) {
   let c = false;
@@ -120,6 +130,27 @@ const pad = 0.6;
 const plinthRing = [[minX - pad, minY - pad], [maxX + pad, minY - pad], [maxX + pad, maxY + pad], [minX - pad, maxY + pad]];
 scene.add(prism(plinthRing, -0.45, -0.02, M.plinth));
 
+// -------------------------------------------------------------- open-plan edges
+// Dining and Living share one wall on the drawing but nothing separates them on
+// the ground: the photos show a plain beam overhead, not a partition. Any edge
+// shared by both rooms' outlines is left open rather than walled.
+const OPEN_PAIRS = [['dining', 'living']];
+const edgeKey = (a, b) => {
+  const p = [Math.round(a[0] * 200), Math.round(a[1] * 200)], q = [Math.round(b[0] * 200), Math.round(b[1] * 200)];
+  return p[0] < q[0] || (p[0] === q[0] && p[1] < q[1]) ? `${p}|${q}` : `${q}|${p}`;
+};
+const openEdges = new Set();
+for (const [ra, rb] of OPEN_PAIRS) {
+  const A = rooms.find(r => r.id === ra), B = rooms.find(r => r.id === rb);
+  if (!A || !B) continue;
+  const keysA = new Set();
+  for (let i = 0; i < A.boundary_xy.length; i++) keysA.add(edgeKey(A.boundary_xy[i], A.boundary_xy[(i + 1) % A.boundary_xy.length]));
+  for (let i = 0; i < B.boundary_xy.length; i++) {
+    const k = edgeKey(B.boundary_xy[i], B.boundary_xy[(i + 1) % B.boundary_xy.length]);
+    if (keysA.has(k)) openEdges.add(k);
+  }
+}
+
 // -------------------------------------------------------------- rooms: floor + walls
 const walkRings = [];
 for (const r of rooms) {
@@ -131,7 +162,7 @@ for (const r of rooms) {
   for (let i = 0; i < ring.length; i++) {
     const a = ring[i], b = ring[(i + 1) % ring.length];
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (len < 0.05) continue;
+    if (len < 0.05 || openEdges.has(edgeKey(a, b))) continue;
     const g = new THREE.BoxGeometry(len + WALL_T, ch, WALL_T);
     g.translate(0, ch / 2, 0);
     const A = W(...a), B = W(...b);
@@ -141,6 +172,7 @@ for (const r of rooms) {
   }
   walkRings.push(insetRing(ring, WALL_T / 2 + 0.22));
 }
+scene.add(buildInterior({ mesh, rbox, prism, M, W, rooms }));
 
 // -------------------------------------------------------------- labels
 const labelHost = document.getElementById('labels');

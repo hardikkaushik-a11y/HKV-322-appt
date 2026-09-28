@@ -3,7 +3,7 @@
  "source_drawing": "ALD-01 Plan/Layout R1, Studio Spindle, Ar. Shivangi Kaushik, dated 04-08-2026",
  "units": "metres",
  "coordinate_system": "x = sheet right, y = sheet up (toward the Varandah); origin near the Study's SW corner",
- "provenance": "Digitized by reading ALD-01's printed dimension callouts; no DXF/CAD file exists yet for this project. Rooms marked labeled=true use the architect's own printed W x D dimensions, scaled from feet-inches to metres. Rooms marked labeled=false (Foyer, Servant Toilet, Toilet 1, Varandah) have no explicit dimension pair on this sheet; their size is estimated from the drawing's proportions and should be corrected once a DXF or updated dimension set is available. Bay-window / window-seat alcoves and the kitchen's L-shaped notch are simplified to plain rectangles for this pass. Wall thickness, door and window openings, and furniture are not modelled -- this is a neutral spatial shell only.",
+ "provenance": "Digitized by reading ALD-01's printed dimension callouts; no DXF/CAD file exists yet for this project. Rooms marked labeled=true use the architect's own printed W x D dimensions for their main volume. Rooms marked labeled=false (Foyer, Servant Toilet, Toilet 1, Varandah) have no explicit dimension pair on this sheet and are an eyeballed estimate. Rooms marked notched=true also carry a bay window, window seat or the kitchen's L-shaped notch, each sized from the sheet's own alcove dimension and attached at the wall the drawing shows it on; the drawing itself says its dimensions are to be read, not measured off the sheet, so these alcove positions are a qualitative placement rather than a pixel trace. Wall thickness, door and window openings, and furniture are not modelled here.",
  "rooms": {
   "tlt3": {
    "name": "Toilet 3",
@@ -19,10 +19,6 @@
    ],
    "boundary_xy": [
     [
-     0.0,
-     4.013
-    ],
-    [
      2.997,
      4.013
     ],
@@ -33,8 +29,13 @@
     [
      0.0,
      5.652
+    ],
+    [
+     0.0,
+     4.013
     ]
-   ]
+   ],
+   "notched": false
   },
   "study": {
    "name": "Study",
@@ -50,10 +51,6 @@
    ],
    "boundary_xy": [
     [
-     0.0,
-     0.0
-    ],
-    [
      2.997,
      0.0
     ],
@@ -64,8 +61,13 @@
     [
      0.0,
      4.013
+    ],
+    [
+     0.0,
+     0.0
     ]
-   ]
+   ],
+   "notched": false
   },
   "master": {
    "name": "Master Bedroom",
@@ -73,30 +75,43 @@
    "labeled": true,
    "width_m": 3.2,
    "depth_m": 5.296,
-   "area_m2": 16.95,
+   "area_m2": 17.63,
    "ceiling_h_m": 3.023,
    "centroid_xy": [
-    4.597,
-    5.239
+    4.562,
+    5.35
    ],
    "boundary_xy": [
     [
-     2.997,
-     2.591
-    ],
-    [
-     6.198,
-     2.591
-    ],
-    [
      6.198,
      7.887
     ],
     [
+     6.198,
+     2.591
+    ],
+    [
      2.997,
+     2.591
+    ],
+    [
+     2.997,
+     7.887
+    ],
+    [
+     2.997,
+     8.395
+    ],
+    [
+     4.331,
+     8.395
+    ],
+    [
+     4.331,
      7.887
     ]
-   ]
+   ],
+   "notched": true
   },
   "bed2": {
    "name": "Bedroom 2",
@@ -112,10 +127,6 @@
    ],
    "boundary_xy": [
     [
-     2.997,
-     0.0
-    ],
-    [
      7.404,
      0.0
     ],
@@ -126,8 +137,13 @@
     [
      2.997,
      2.591
+    ],
+    [
+     2.997,
+     0.0
     ]
-   ]
+   ],
+   "notched": false
   },
   "bed1": {
    "name": "Bedroom 1",
@@ -135,30 +151,47 @@
    "labeled": true,
    "width_m": 3.226,
    "depth_m": 4.407,
-   "area_m2": 14.22,
+   "area_m2": 15.09,
    "ceiling_h_m": 3.302,
    "centroid_xy": [
-    9.017,
-    6.561
+    9.008,
+    6.7
    ],
    "boundary_xy": [
     [
-     7.404,
-     4.357
-    ],
-    [
-     10.63,
-     4.357
-    ],
-    [
      10.63,
      8.764
     ],
     [
+     10.63,
+     4.357
+    ],
+    [
      7.404,
+     4.357
+    ],
+    [
+     7.404,
+     8.764
+    ],
+    [
+     7.704,
+     8.764
+    ],
+    [
+     7.704,
+     9.145
+    ],
+    [
+     10.004,
+     9.145
+    ],
+    [
+     10.004,
      8.764
     ]
-   ]
+   ],
+   "notched": true
   },
   "foyer": {
    "name": "Foyer",
@@ -174,10 +207,6 @@
    ],
    "boundary_xy": [
     [
-     7.404,
-     2.157
-    ],
-    [
      9.604,
      2.157
     ],
@@ -188,8 +217,13 @@
     [
      7.404,
      4.357
+    ],
+    [
+     7.404,
+     2.157
     ]
-   ]
+   ],
+   "notched": false
   },
   "stlt": {
    "name": "Servant Toilet",
@@ -205,10 +239,6 @@
    ],
    "boundary_xy": [
     [
-     10.563,
-     0.0
-    ],
-    [
      11.763,
      0.0
     ],
@@ -219,8 +249,13 @@
     [
      10.563,
      1.5
+    ],
+    [
+     10.563,
+     0.0
     ]
-   ]
+   ],
+   "notched": false
   },
   "tlt1": {
    "name": "Toilet 1",
@@ -236,10 +271,6 @@
    ],
    "boundary_xy": [
     [
-     9.028,
-     0.0
-    ],
-    [
      10.463,
      0.0
     ],
@@ -250,8 +281,13 @@
     [
      9.028,
      1.8
+    ],
+    [
+     9.028,
+     0.0
     ]
-   ]
+   ],
+   "notched": false
   },
   "tlt2": {
    "name": "Toilet 2",
@@ -267,10 +303,6 @@
    ],
    "boundary_xy": [
     [
-     7.404,
-     0.0
-    ],
-    [
      8.928,
      0.0
     ],
@@ -281,8 +313,13 @@
     [
      7.404,
      2.057
+    ],
+    [
+     7.404,
+     0.0
     ]
-   ]
+   ],
+   "notched": false
   },
   "dining": {
    "name": "Dining Area",
@@ -298,10 +335,6 @@
    ],
    "boundary_xy": [
     [
-     11.863,
-     3.874
-    ],
-    [
      15.064,
      3.874
     ],
@@ -312,8 +345,13 @@
     [
      11.863,
      9.512
+    ],
+    [
+     11.863,
+     3.874
     ]
-   ]
+   ],
+   "notched": false
   },
   "living": {
    "name": "Living Room",
@@ -329,10 +367,6 @@
    ],
    "boundary_xy": [
     [
-     15.064,
-     3.874
-    ],
-    [
      18.518,
      3.874
     ],
@@ -343,8 +377,13 @@
     [
      15.064,
      9.512
+    ],
+    [
+     15.064,
+     3.874
     ]
-   ]
+   ],
+   "notched": false
   },
   "kitchen": {
    "name": "Kitchen",
@@ -352,30 +391,39 @@
    "labeled": true,
    "width_m": 2.997,
    "depth_m": 3.874,
-   "area_m2": 11.61,
+   "area_m2": 9.66,
    "ceiling_h_m": null,
    "centroid_xy": [
-    13.362,
-    1.937
+    13.513,
+    1.677
    ],
    "boundary_xy": [
     [
-     11.863,
-     0.0
-    ],
-    [
-     14.86,
-     0.0
-    ],
-    [
      14.86,
      3.874
     ],
     [
+     14.86,
+     0.0
+    ],
+    [
      11.863,
+     0.0
+    ],
+    [
+     11.863,
+     2.574
+    ],
+    [
+     13.363,
+     2.574
+    ],
+    [
+     13.363,
      3.874
     ]
-   ]
+   ],
+   "notched": true
   },
   "varandah": {
    "name": "Varandah",
@@ -391,10 +439,6 @@
    ],
    "boundary_xy": [
     [
-     2.997,
-     9.512
-    ],
-    [
      18.518,
      9.512
     ],
@@ -405,8 +449,13 @@
     [
      2.997,
      11.112
+    ],
+    [
+     2.997,
+     9.512
     ]
-   ]
+   ],
+   "notched": false
   }
  }
 }

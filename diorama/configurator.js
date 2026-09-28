@@ -68,9 +68,8 @@ const SAMPLES = [
   { id: 'linen',     cat: 'paint',  name: 'Linen white',      c: 0xE4DED3, L: .87, warm: .25, soft: .3 },
   { id: 'pebble',    cat: 'paint',  name: 'Pebble grey',      c: 0xB8B3AC, L: .68, warm: 0,   soft: .3 },
   { id: 'greige',    cat: 'paint',  name: 'Greige',           c: 0xB9AD9D, L: .66, warm: .3,  soft: .3 },
-  // HKV-322 as it stands today, read off the two site photos
-  { id: 'beigetile', cat: 'stone',  name: 'Beige vitrified tile', c: 0xE2D7C5, vein: 0xCDBFA8, veins: 0, L: .84, warm: .3, soft: .1, tile: 0.6, rough: .28, cc: .35 },
-  { id: 'persian',   cat: 'fabric', name: 'Persian rug',      c: 0x7A2620, kind: 'persian', rug: true, L: .28, warm: .8, soft: .85 },
+  // a flat's own finishes (flat.json `samples`, colours as '#rrggbb'), e.g. what is there today
+  ...(api.flat.samples || []).map(s => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? parseInt(v.slice(1), 16) : v]))),
 ];
 const SAMPLE = Object.fromEntries(SAMPLES.map(s => [s.id, s]));
 const CATS = [['wood', 'Wood'], ['stone', 'Stone'], ['fabric', 'Fabric'], ['paint', 'Paint']];
@@ -88,11 +87,10 @@ const SLOTS = {
   doors:      { name: 'Doors', the: 'the doors', cats: ['wood', 'paint'], mat: 'door' },
   rug:        { name: 'Rugs', the: 'the rugs', cats: ['fabric'], mat: 'rug' },
 };
-// Original: the flat as it stands today (two site photos): beige vitrified tile, warm
-// white walls, teak cupboards and show case, beige sofas, the rust daybed, walnut-dark
-// chairs and tables, the red Persian rug.
-const DEFAULTS = { floor: 'beigetile', walls: 'warmwhite', joinery: 'teak', worktop: 'bianco', upholstery: 'stone',
-                   accent: 'rust', woodwork: 'walnut', doors: 'teak', rug: 'persian' };
+// Original: the flat's own finishes from flat.json `original` (what is there today, or
+// the architect's specification); any surface it leaves out takes a quiet default.
+const DEFAULTS = { floor: 'oak', walls: 'warmwhite', joinery: 'teak', worktop: 'bianco', upholstery: 'stone',
+                   accent: 'rust', woodwork: 'walnut', doors: 'teak', rug: 'ivory', ...(api.flat.original || {}) };
 // Each bedroom has its own slots, keyed '<room>.<surface>', on its own materials and
 // starting from her finishes. In a bedroom, the tray, presets and meter work on that
 // room; in the whole-flat view, on the flat's shared surfaces.
@@ -583,7 +581,7 @@ const TIMES = [['Morning', 7.5, 'sunrise'], ['Midday', 12.35, 'sun'], ['Evening'
 
 // ------------------------------------------------------------------ mood
 const PRESETS = [
-  { id: 'original', name: 'Original', sub: 'as it is today', f: DEFAULTS, t: 10.5 },
+  { id: 'original', name: 'Original', sub: api.flat.original_sub || 'as designed', f: DEFAULTS, t: 10.5 },
   { id: 'cozy', name: 'Cozy', sub: 'golden hour', t: 17.3,
     f: { floor: 'teak', walls: 'sand', joinery: 'oak', worktop: 'travertine', upholstery: 'oat', accent: 'rust', woodwork: 'teak', doors: 'teak', rug: 'rust' } },
   { id: 'bright', name: 'Bright', sub: 'midday', t: 12.35,
@@ -901,7 +899,7 @@ ui.innerHTML = `
     <h2>Play with the flat</h2>
     <p>Try finishes, move the furniture and watch the light change through the day. Nothing here is permanent: undo, or reset the furniture, at any time.</p>
     <h3>Finishes</h3>
-    <p>Drag a sample from the tray onto a surface and it previews in place; let go to keep it. Or open a room, click a surface, then click a sample. Wood goes on floors, woodwork, fronts and doors; stone on floors, walls and worktops; paint on walls, fronts and doors; fabric on upholstery, cushions and rugs. Original is the flat as it stands today, dressed from site photos: beige vitrified tile, warm white walls, teak cupboards and show case, beige sofas and the rust daybed; every other preset is a concept, and Original puts today's flat back.</p>
+    <p>Drag a sample from the tray onto a surface and it previews in place; let go to keep it. Or open a room, click a surface, then click a sample. Wood goes on floors, woodwork, fronts and doors; stone on floors, walls and worktops; paint on walls, fronts and doors; fabric on upholstery, cushions and rugs. ${api.flat.original_note || ''}</p>
     <h3>Furniture</h3>
     <p>Drag any loose piece to move it. It snaps in 10 cm steps and will not go into a wall, another piece or fitted joinery. Scroll while dragging to turn it. Click a piece for Turn, Put back and Take out. The Furniture tab adds pieces: click one to drop it in view, or drag it into a room. Kitchen units, wardrobes and bathroom fittings are fixed.</p>
     <h3>Walk</h3>
@@ -1170,7 +1168,7 @@ $('.layout-reset', ui).onclick = () => {
 };
 // walk mode (walk.js): the title follows the room you are standing in
 const walk = createWalk(api, { onChange: (r) => {
-  document.getElementById('t-k').textContent = 'HKV-322 · Hauz Khas · Walking';
+  document.getElementById('t-k').textContent = `${api.flat.title?.kicker || ''} · Walking`;
   const name = r.space === 'balcony-all' ? 'Balcony' : r.name;
   if (document.getElementById('t-h').textContent !== name) { document.getElementById('t-h').textContent = name; document.getElementById('t-a').textContent = ''; }
 } });
@@ -1185,7 +1183,7 @@ const TOOL = {
     outline.visible = false; highlight(null);
     api.composer.render();
     const a = document.createElement('a');
-    a.download = 'HKV-322-flat.png'; a.href = el.toDataURL('image/png'); a.click();
+    a.download = `${api.flat.id || 'flat'}.png`; a.href = el.toDataURL('image/png'); a.click();
     if (sel?.pivot) drawOutline(sel.pivot.userData.piece, pose(sel.pivot.userData.piece));
     if (sel?.slot) highlight(sel.slot);
   },

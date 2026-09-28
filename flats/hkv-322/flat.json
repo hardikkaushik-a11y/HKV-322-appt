@@ -1,0 +1,262 @@
+{
+ "id": "hkv-322",
+ "title": {
+  "kicker": "HKV-322 · Hauz Khas",
+  "name": "The flat",
+  "page": "HKV-322 · The flat"
+ },
+ "plan": {
+  "file": "060726_HKV_322_LAYOUT_R1.pdf",
+  "note": "ALD-01 R1 (04-08-2026), Ar. Shivangi Kaushik / Studio Spindle. Vector PDF with its CAD layers. Not kept in the repo: it carries the client's name and address.",
+  "scale": 0.9138,
+  "scale_note": "Sheet says 1:50 @ A3 but was plotted to fit; printed dimensions read 0.914 of drawn wall-to-wall (make_flat measures this; pinned so HKV-322 does not shift). Living's 11'-4\" reads 0.978: for the architect to confirm."
+ },
+ "rooms": {
+  "DINING AREA": {
+   "id": "dining",
+   "name": "Dining"
+  },
+  "TLT 1": {
+   "id": "tlt1",
+   "name": "Toilet 1"
+  },
+  "TLT 2": {
+   "id": "tlt2",
+   "name": "Toilet 2"
+  },
+  "TLT 3": {
+   "id": "tlt3",
+   "name": "Toilet 3"
+  },
+  "S.TLT": {
+   "id": "stlt",
+   "name": "Servant toilet"
+  }
+ },
+ "fixes": {
+  "door_strips": [
+   {
+    "box": [
+     19.82,
+     6.36,
+     20.15,
+     7.52
+    ],
+    "why": "the living room's east door is drawn with straight segments, not an arc"
+   }
+  ],
+  "dividers": [
+   {
+    "between": "foyer|dining",
+    "line": [
+     [
+      12.393,
+      6.403
+     ],
+     [
+      12.393,
+      7.294
+     ]
+    ],
+    "why": "open plan, on bed1's east wall line"
+   },
+   {
+    "between": "dining|living",
+    "line": [
+     [
+      16.174,
+      6.403
+     ],
+     [
+      16.174,
+      10.441
+     ]
+    ],
+    "why": "open plan, on the TV wall's line"
+   },
+   {
+    "between": "master|study",
+    "line": [
+     [
+      4.844,
+      7.154
+     ],
+     [
+      4.844,
+      8.128
+     ]
+    ],
+    "why": "across the master bedroom's open passage into the study"
+   }
+  ],
+  "outdoor": [
+   {
+    "id": "varandah",
+    "name": "Varandah",
+    "box": [
+     4.83,
+     11.0,
+     16.021,
+     14.457
+    ]
+   },
+   {
+    "id": "varandah2",
+    "name": "Varandah",
+    "box": [
+     16.326,
+     11.0,
+     19.983,
+     14.457
+    ]
+   }
+  ],
+  "parapet": [
+   [
+    [
+     4.705,
+     12.076
+    ],
+    [
+     4.83,
+     12.076
+    ],
+    [
+     4.83,
+     14.457
+    ],
+    [
+     14.645,
+     14.457
+    ],
+    [
+     14.645,
+     14.582
+    ],
+    [
+     4.705,
+     14.582
+    ]
+   ],
+   [
+    [
+     15.979,
+     14.457
+    ],
+    [
+     19.983,
+     14.457
+    ],
+    [
+     19.983,
+     12.827
+    ],
+    [
+     20.108,
+     12.827
+    ],
+    [
+     20.108,
+     14.582
+    ],
+    [
+     15.979,
+     14.582
+    ]
+   ]
+  ]
+ },
+ "spaces": [
+  {
+   "id": "public",
+   "name": "Foyer, dining and living",
+   "members": [
+    "foyer",
+    "dining",
+    "living"
+   ]
+  }
+ ],
+ "chips": [
+  "living",
+  "dining",
+  "foyer",
+  "kitchen",
+  "master",
+  "study",
+  "bed1",
+  "bed2",
+  "varandah",
+  "tlt1",
+  "tlt2",
+  "tlt3",
+  "stlt"
+ ],
+ "minor": [
+  "tlt1",
+  "tlt2",
+  "tlt3",
+  "stlt",
+  "foyer",
+  "varandah2"
+ ],
+ "samples": [
+  {
+   "id": "beigetile",
+   "cat": "stone",
+   "name": "Beige vitrified tile",
+   "c": "#E2D7C5",
+   "vein": "#CDBFA8",
+   "veins": 0,
+   "L": 0.84,
+   "warm": 0.3,
+   "soft": 0.1,
+   "tile": 0.6,
+   "rough": 0.28,
+   "cc": 0.35
+  },
+  {
+   "id": "persian",
+   "cat": "fabric",
+   "name": "Persian rug",
+   "c": "#7A2620",
+   "kind": "persian",
+   "rug": true,
+   "L": 0.28,
+   "warm": 0.8,
+   "soft": 0.85
+  }
+ ],
+ "original": {
+  "floor": "beigetile",
+  "walls": "warmwhite",
+  "joinery": "teak",
+  "worktop": "bianco",
+  "upholstery": "stone",
+  "accent": "rust",
+  "woodwork": "walnut",
+  "doors": "teak",
+  "rug": "persian"
+ },
+ "original_sub": "as it is today",
+ "original_note": "Original is the flat as it stands today, dressed from site photos: beige vitrified tile, warm white walls, teak cupboards and show case, beige sofas and the rust daybed; every other preset is a concept, and Original puts today's flat back.",
+ "walk": {
+  "start": "foyer"
+ },
+ "pieces": "pieces.py",
+ "north_sheet": [
+  -0.34,
+  0.94
+ ],
+ "north_note": "approximate, read off the north arrow in the ALD-01 title block",
+ "counter": {
+  "carcass": 0.86,
+  "top": 0.03,
+  "why": "conventional 900 mm worktop; no appliance heights on ALD-01"
+ },
+ "provenance": {
+  "layout": "Ar. Shivangi Kaushik / Studio Spindle, ALD-01 R1 (04-08-2026), vector PDF with its CAD layers",
+  "finishes": "Original = the flat as it stands today, from two site photos; other options are concept finishes",
+  "heights": "ceiling heights from her CH labels; section cut at 2.1 m; sills 0.9 m assumed"
+ }
+}

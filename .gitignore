@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+# staged copies for publishing, and check images (they show the architect's sheet, title block included)
+out/

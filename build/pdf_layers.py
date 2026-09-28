@@ -1,16 +1,19 @@
-"""Read the ALD-01 PDF's CAD layers (it is a vector export with the drawing's own
-layer names) into plan metres. 1:50 on an A3 sheet: 1 pt = 0.3528 mm x 50."""
-import pymupdf
+"""Read an architect's plan PDF that kept its CAD layers (a vector export, as ALD-01)
+into plan metres. Every stroke keeps its CAD layer name; text keeps its size.
+
+The sheet's own scale ("1:50 @ A3") sets the nominal metres per point; make_flat.py
+then corrects it against the printed dimensions (a sheet plotted to fit is off by a
+few per cent)."""
+import re
 from collections import defaultdict
+import pymupdf
 
-import os
-# the architect's ALD-01 PDF; not kept in the repo (it carries the client's name and address)
-PDF = os.environ.get('ALD01_PDF', '/root/.claude/uploads/943923d8-2b5d-5b29-8f8e-fabb7d0a89a3/dc6a1c61-060726_HKV_322_LAYOUT_R1.pdf')
-K = 25.4 / 72 * 50 / 1000          # metres per PDF point at the sheet's nominal 1:50 (build_zone.SCALE corrects it)
-SHEET_H = 842.0
 
-def to_m(x, y):
-    return (round(x * K, 4), round((SHEET_H - y) * K, 4))   # y up the sheet
+def sheet_scale(page):
+    """the '1:NN' the title block prints, or 50"""
+    m = re.search(r'\b1\s*:\s*(\d{2,3})\b', page.get_text())
+    return int(m[1]) if m else 50
+
 
 def bezier(p0, p1, p2, p3, n=10):
     out = []
@@ -20,9 +23,16 @@ def bezier(p0, p1, p2, p3, n=10):
                     u**3*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t**3*p3.y))
     return out
 
-def load(pdf=PDF):
-    page = pymupdf.open(pdf)[0]
-    layers = defaultdict(list)          # layer -> list of polylines (each a list of (x, y) metres)
+
+def load(pdf, page_no=0, ratio=None):
+    """(layers, texts, info): layers maps a CAD layer to its polylines, in metres with
+    y up the sheet; texts are {'text', 'xy', 'size'}."""
+    page = pymupdf.open(pdf)[page_no]
+    ratio = ratio or sheet_scale(page)
+    K = 25.4 / 72 * ratio / 1000          # metres per PDF point at the sheet's nominal scale
+    H = page.rect.height
+    to_m = lambda x, y: (round(x * K, 4), round((H - y) * K, 4))
+    layers = defaultdict(list)
     for d in page.get_drawings():
         L = d.get('layer') or ''
         for it in d['items']:
@@ -41,5 +51,6 @@ def load(pdf=PDF):
             s = ''.join(sp['text'] for sp in line['spans']).strip()
             if not s: continue
             x0, y0, x1, y1 = line['bbox']
-            texts.append({'text': s, 'xy': to_m((x0 + x1) / 2, (y0 + y1) / 2), 'size': line['spans'][0]['size']})
-    return layers, texts
+            texts.append({'text': s, 'xy': to_m((x0 + x1) / 2, (y0 + y1) / 2), 'size': line['spans'][0]['size'],
+                          'vertical': abs(line['dir'][1]) > 0.7})
+    return layers, texts, {'ratio': ratio, 'layers': sorted(layers)}

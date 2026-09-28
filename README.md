@@ -12,41 +12,47 @@ python3 serve.py 8747      # then http://127.0.0.1:8747/diorama/
 
 ## Where it comes from
 
-- **Walls, windows, doors, rooms**: read out of the ALD-01 PDF by `build/build_zone.py`. The
-  PDF is a vector export that kept the drawing's CAD layers (RH-RCC BRICK, RH-DOOR WINDOW,
-  RH-GLASS, the furniture and plumbing layers), so this reads the same sources B-34's DXF build
-  read, not a trace of a picture. Door openings are closed exactly across each jamb (found from
-  the swing arc), not with a blanket fill, so the bay window, window seats, wardrobe niches and
-  the kitchen's L keep their drawn shape.
-- **Scale**: the sheet says 1:50 @ A3 but was plotted to fit. Every printed dimension reads
-  0.914 of its drawn length wall face to face (Bedroom 1 10'-7", Kitchen 9'-10", Living 18'-6",
-  Bedroom 2 14'-5 1/2"), so the plan is scaled by that factor. **For the architect**: Living's
+- **Walls, windows, doors, rooms**: read out of the ALD-01 PDF by `build/make_flat.py`
+  (`build/plan.py` does the reading). The PDF is a vector export that kept the drawing's
+  CAD layers (RH-RCC BRICK, RH-DOOR WINDOW, RH-GLASS, the furniture and plumbing layers),
+  so this reads the same sources B-34's DXF build read, not a trace of a picture. Door
+  openings are closed exactly across each jamb (found from the swing arc), so the bay
+  window, window seats, wardrobe niches and the kitchen's L keep their drawn shape.
+- **Scale**: the sheet says 1:50 @ A3 but was plotted to fit. `make_flat.py` measures the
+  factor from the printed dimensions (0.9131); `flats/hkv-322/flat.json` pins 0.9138, the
+  value first set by hand, so the model does not shift. **For the architect**: Living's
   11'-4" reads 0.978 instead; worth confirming on site.
-- **Furniture**: `build/build_pieces.py` reads each drawn piece's footprint, size and room from
-  the same PDF and names it from the architect's labels. The drawing's layout is the flat as it
-  is today (it matches the two site photos piece for piece). A few things only in the photos
+- **Furniture**: `flats/hkv-322/pieces.py` sets each piece from the drawing's furniture
+  layers and the architect's labels, by hand. The drawing's layout is the flat as it is
+  today (it matches the two site photos piece for piece). A few things only in the photos
   are added and marked `source: "site photo"` in `zone.json`: the Persian rug, sideboard and
   Tanjore painting, rocking chair, photo frames, brass vase, floor lamps and the fridge.
+  (Without that file the kit furnishes from the drawing on its own; see NEW_FLAT.md.)
 - **"Original"**: the flat as it stands today, dressed from the two site photos: beige
   vitrified tile, warm white walls, teak cupboards and show case, beige sofas, the rust daybed,
   dark wood chairs and tables, the red Persian rug. Cozy, Bright and Moody are concepts.
 - **Not drawn, so not invented**: Bedroom 2 has only its wardrobe on ALD-01; the kitchen has
   only its counter; no branded products are specified yet (the Products tab stays hidden).
+  The servant toilet opens off the service side on ALD-01, so walk mode cannot reach it
+  from inside the flat.
 
 ## Files
 
-- `diorama/` - the app. The engine (`diorama.js`, `configurator.js`, `walk.js`,
-  `textures.js`) is B-34's, with HKV-322's rooms, titles and a cutaway for tall joinery
-  (a wardrobe or show case on a wall facing you trims to knee height like the walls do).
-  `furnish.js` gives each HKV-322 piece its shape; `products.js` is an empty stand-in.
-- `assets/diorama/zone.json` - the flat: walls, glass, rooms, spaces and pieces.
-- `build/` - rebuilds `zone.json` from the PDF:
+- `diorama/` - the engine, B-34's, knowing no flat of its own: it reads the flat named by
+  `?flat=<id>` or by the page's `<meta name="flat">` (this repo's page: `../flats/hkv-322/`).
+- `flats/hkv-322/flat.json` - HKV-322's settings: titles, room names, the fixes the drawing
+  leaves implicit (open-plan dividers, the varandah and its parapet, one door drawn without
+  a swing), room order, Original finishes.
+- `flats/hkv-322/zone.json` - built: walls, glass, rooms, spaces and pieces.
+- `build/` - the kit: `make_flat.py` (plan PDF to zone.json, with a report and a check
+  image), `plan.py`, `furnish_auto.py`, `pdf_layers.py`, `stage.py` (a publishable copy).
 
 ```bash
-cd build
-ALD01_PDF=/path/to/HKV_322_LAYOUT_R1.pdf python3 build_zone.py --report --write ../assets/diorama/zone.json
-ALD01_PDF=/path/to/HKV_322_LAYOUT_R1.pdf python3 build_pieces.py --write
+python3 build/make_flat.py hkv-322 --pdf /path/to/060726_HKV_322_LAYOUT_R1.pdf --write --check out/hkv-322.png
+python3 build/stage.py hkv-322        # out/publish/hkv-322/, what the live link serves
 ```
+
+**Another flat: NEW_FLAT.md.**
 
 The PDF and the site photos are not in the repo: the drawing carries the client's name and
 address and one photo shows a member of the family at home.

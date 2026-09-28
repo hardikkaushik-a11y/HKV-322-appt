@@ -1,7 +1,6 @@
-// HKV-322, the whole flat as a diorama. The engine is B-34's; the flat is read out of
-// Ar. Shivangi Kaushik's ALD-01 PDF (its CAD layers) by build/build_zone.py, and the
-// furniture at the positions and sizes she drew by build/build_pieces.py. The
-// "Original" look is the flat as it stands today, from site photos.
+// A flat as a diorama. The engine is B-34's and knows no flat of its own: the flat is
+// flats/<id>/zone.json (walls, rooms, furniture, read out of the architect's plan by
+// build/make_flat.py) and flats/<id>/flat.json (its titles, room order and finishes).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -14,7 +13,13 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { marble, wood, fabric, shutter, tambour, paint, terrazzo, leather, limewash, normalFrom } from './textures.js';
 import { buildFurnishing } from './furnish.js';
 
-const zone = await (await fetch('../assets/diorama/zone.json')).json();
+// which flat: ?flat=<id> reads ../flats/<id>/; otherwise <meta name="flat"> in the page
+// says where the flat's files are (a published copy keeps them beside the engine)
+const FLAT = (() => { const id = new URLSearchParams(location.search).get('flat');
+  return id ? `../flats/${encodeURIComponent(id)}/` : (document.querySelector('meta[name="flat"]')?.content || './flat/'); })();
+const [zone, flat] = await Promise.all(['zone.json', 'flat.json'].map(async f => (await fetch(FLAT + f)).json()));
+const KICKER = flat.title?.kicker || '', FLAT_NAME = flat.title?.name || 'The flat';
+document.title = flat.title?.page || `${KICKER} · ${FLAT_NAME}`;
 const [CX, CY] = zone.centre;
 const CUT = zone.cut_height;
 const CT = zone.counter.carcass, CTOP = zone.counter.carcass + zone.counter.top;
@@ -216,7 +221,7 @@ function backDir(o) {
 // floor is cut out of the flat's floor.
 const BAY = null;
 const bedrooms = buildFurnishing({ W, CUT, mesh, rbox, prism, M, zone, inWall, inRing });
-// HKV-322's own pieces (furnish.js) take their shape from BUILD; the rest use B below
+// the flat's pieces take their shape from furnish.js's BUILD where it has the type; the rest use B below
 for (const p of zone.pieces) if (bedrooms.BUILD[p.type]) p.build = bedrooms.BUILD[p.type];
 const bedroomFloors = Object.values(bedrooms.floors);
 // the bedroom rings that sit wholly inside a floor polygon and clear of its own holes
@@ -783,7 +788,7 @@ async function focusRoom(r) {
   for (const low of Object.values(lowCopies)) low.visible = false;
   for (const g of scene.children) if (g.userData.cladding) g.visible = (g.userData.rooms || [g.userData.room]).some(id => members.includes(id)) && !g.userData.off;
   labels.forEach(l => l.el.hidden = true);
-  titleK.textContent = 'HKV-322 · Hauz Khas · The flat'; titleH.textContent = r.name; titleA.textContent = areaText(roomArea(r));
+  titleK.textContent = `${KICKER} · ${FLAT_NAME}`; titleH.textContent = r.name; titleA.textContent = areaText(roomArea(r));
   back.hidden = false;
   flyTo(r.island, r.view_from);
   studio(true);
@@ -801,7 +806,7 @@ function showFlat() {
   for (const root of Object.values(modelRoots)) root.visible = true;
   for (const g of scene.children) if (g.userData.cladding) g.visible = !g.userData.off;
   labels.forEach(l => l.el.hidden = false);
-  titleK.textContent = 'HKV-322 · Hauz Khas'; titleH.textContent = 'The flat'; titleA.textContent = `about ${areaText(flatArea())} of floor`;
+  titleK.textContent = KICKER; titleH.textContent = FLAT_NAME; titleA.textContent = `about ${areaText(flatArea())} of floor`;
   back.hidden = true;
   flyTo(zone.zone, HOME_FROM);
   useRoomEnvironment(null);
@@ -815,7 +820,8 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && focused && !walking
 // room labels over the flat; click one to isolate that room
 const labelHost = document.getElementById('labels');
 // Fewer names at once: the small rooms show theirs only while the pointer is over them.
-const MINOR = new Set(['tlt1', 'tlt2', 'tlt3', 'stlt', 'foyer', 'varandah2']);
+// (flat.json `minor`; by default any room under 6 m2)
+const MINOR = new Set(flat.minor || zone.rooms.filter(r => polyArea(r.outline) < 6).map(r => r.id));
 const labels = zone.rooms.filter(r => r.id !== 'wiw').map(r => {
   const el = document.createElement('button');
   el.className = 'room' + (r.model ? ' designed' : '') + (MINOR.has(r.id) ? ' minor' : '');
@@ -827,7 +833,7 @@ const labels = zone.rooms.filter(r => r.id !== 'wiw').map(r => {
 // On a phone the labels would pile up over a small model: a strip of room chips
 // stands in for them (index.html shows it only on narrow screens).
 const chipHost = document.getElementById('chips');
-const CHIP_ORDER = ['living', 'dining', 'foyer', 'kitchen', 'master', 'study', 'bed1', 'bed2', 'varandah', 'tlt1', 'tlt2', 'tlt3', 'stlt'];
+const CHIP_ORDER = flat.chips || zone.rooms.map(r => r.id);
 const chips = [['flat', 'Whole flat', null], ...CHIP_ORDER.map(id => zone.rooms.find(r => r.id === id)).filter(Boolean).map(r => [r.id, r.name, r])].map(([id, name, r]) => {
   const b = document.createElement('button');
   b.textContent = name; b.dataset.room = id;
@@ -1000,7 +1006,7 @@ frameHooks.push(() => {
   return true;
 });
 export const api = {
-  lite,
+  lite, flat,
   THREE, scene, camera, renderer, composer, controls, host, M, B, zone, W, CX, CY, CUT,
   inRing, inWall, prism, mesh, rbox, pieces, pieceGroups, placePiece, models, modelRoots,
   sun, hemi, fill, placeSun, dirtyShadows, wake, lightHooks, frameHooks, tip, spaces, safe,

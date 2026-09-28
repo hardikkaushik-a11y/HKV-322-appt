@@ -59,10 +59,10 @@ export function createWalk(api, { onChange } = {}) {
       lintel([...ring, ring[0]]);
     } else lintel(w.outer);                       // over a window: the sill's own footprint
   }
-  // Bedroom 3's bay (added in diorama.js) has glass but no wall above it: close it too
+  // glass with no wall above it (a bay, say) is closed by bands the flat lists in flat.json
   const band = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy), nx = -dy / l * 0.06, ny = dx / l * 0.06;
     lintel([[a[0] - nx, a[1] - ny], [b[0] - nx, b[1] - ny], [b[0] + nx, b[1] + ny], [a[0] + nx, a[1] + ny], [a[0] - nx, a[1] - ny]]); };
-  for (const [a, b] of [[[8.40, 14.392], [10.60, 14.392]], [[10.60, 14.392], [10.60, 13.65]], [[10.60, 13.65], [11.61, 13.65]], [[8.42, 13.427], [8.42, 14.392]]]) band(a, b);
+  for (const [a, b] of api.flat.walk?.bands ?? []) band(a, b);
   const glow = new THREE.AmbientLight(0xFFF3E6, 0); scene.add(glow);
 
   // what walk mode changes on the rest of the scene, remembered so it can be put back
@@ -291,17 +291,18 @@ export function createWalk(api, { onChange } = {}) {
       }
       moved = true;
     }
-    // Bedroom 3's sliding door opens as you come up to it
-    if (Math.hypot(pos.x - 8.42, pos.y - 13.9) < 1.4) api.setDoor(1);
+    // a sliding door the flat names in flat.json opens as you come up to it
+    const door = api.flat.walk?.door;
+    if (door && Math.hypot(pos.x - door.at[0], pos.y - door.at[1]) < (door.r ?? 1.4)) api.setDoor(1);
     if (moved) place();
     return moved;
   });
 
   // ---------------------------------------------------------------- in and out
   let before = null;
-  // start inside the room on screen (or the foyer), facing its longest open view
+  // start inside the room on screen (or flat.json's walk start), facing its longest open view
   function start(room) {
-    const r = room?.members ? api.zone.rooms.find(q => q.id === room.members[0]) : room || zone.rooms.find(q => q.id === 'foyer');
+    const r = room?.members ? api.zone.rooms.find(q => q.id === room.members[0]) : room || zone.rooms.find(q => q.id === api.flat.walk?.start) || zone.rooms[0];
     let [x, y] = r.label_xy;
     if (!clear(x, y)) {
       outer: for (let rad = 0.1; rad < 2; rad += 0.1) for (let k = 0; k < 16; k++) {

@@ -1,8 +1,7 @@
-// HKV-322's furniture, built in the diorama's own procedural style.
+// Furniture, built in the diorama's own procedural style (first made for HKV-322).
 //
-// Positions, sizes and which way each piece faces come from zone.json `pieces`, read
-// out of the architect's ALD-01 drawing by build/build_pieces.py (plus a few pieces
-// that are only in the two site photos, marked source: 'site photo'). This file only
+// Positions, sizes and which way each piece faces come from the flat's zone.json
+// `pieces`, read out of the architect's drawing by build/make_flat.py. This file only
 // gives each type a shape. Surfaces use the flat's shared materials (M.fabric,
 // M.accent, M.walnut, M.shutters, M.top, M.rug) so the swatch tray, the presets and
 // the mood meter act on them; "Original" dresses them as the flat is today.

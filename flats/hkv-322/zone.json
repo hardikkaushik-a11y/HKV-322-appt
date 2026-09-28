@@ -1,5 +1,5 @@
 {
- "frame": "metres; x = sheet right, y = sheet up (ALD-01 PDF at 1:50). three.js: (x - cx, z, -(y - cy))",
+ "frame": "metres; x = sheet right, y = sheet up (the plan at 1:50, scaled by 0.9138). three.js: (x - cx, z, -(y - cy))",
  "centre": [
   10.075,
   7.712

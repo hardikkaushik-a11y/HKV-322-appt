@@ -225,6 +225,8 @@ def build(P, zone, S):
     add('dining-sideboard', 'sideboard', 'Sideboard', 'dining', {'cx': 12.75, 'cy': 6.07, 'w': 1.22, 'd': 0.45, 'angle': 0}, facing=(0, 1), src='site photo', movable=True)
     add('dining-painting', 'painting', 'Tanjore painting', 'dining', {'cx': 12.75, 'cy': 5.86, 'w': 0.5, 'd': 0.04, 'angle': 0}, facing=(0, 1), movable=False, src='site photo', extra={'z': 1.35, 'h': 0.62, 'art': 'tanjore'})
     add('living-photos', 'painting', 'Photo frames', 'living', {'cx': 15.9, 'cy': 5.86, 'w': 0.72, 'd': 0.03, 'angle': 0}, facing=(0, 1), movable=False, src='site photo', extra={'z': 1.3, 'h': 0.72, 'art': 'grid'})
+    add('kitchen-curtain', 'curtain', 'Kitchen doorway curtain', 'dining', {'cx': 13.99, 'cy': 5.89, 'w': 0.86, 'd': 0.06, 'angle': 0},
+        facing=(0, 1), movable=False, src='site photo')
     # foyer
     against('foyer', {**at('foyer', 10.27, 4.79)['obb'], 'angle': 0.0}, 0.40, 'shoe_cabinet', 'foyer-console', 'Console', movable=True)
     # kitchen: the counter line on the sheet, 2' off the east wall; the fridge is in the photo

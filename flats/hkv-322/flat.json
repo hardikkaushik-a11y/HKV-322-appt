@@ -164,6 +164,19 @@
      14.582
     ]
    ]
+  ],
+  "leaves": [
+   {
+    "hinge": [
+     19.86,
+     6.47
+    ],
+    "tip": [
+     18.96,
+     6.47
+    ],
+    "why": "the living room's east door, drawn without an arc"
+   }
   ]
  },
  "spaces": [

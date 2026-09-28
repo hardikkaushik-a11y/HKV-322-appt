@@ -46,18 +46,25 @@ def glass_paths(win):
 def zone_json(P, S, cfg):
     ring = lambda poly, nd=3: [[round(x * S, nd), round(y * S, nd)] for x, y in poly.exterior.coords]
     pt = lambda xy, nd=3: [round(xy[0] * S, nd), round(xy[1] * S, nd)]
-    wall_list = [{'id': f'wall-{i}', 'kind': 'masonry', 'z0': 0, 'z1': CUT, 'outer': ring(p), 'holes': [ring(Polygon(h)) for h in p.interiors]}
+    # each solid keeps its sheet-metre polygon ('_poly') so a room clips it in the same frame
+    wall_list = [{'id': f'wall-{i}', 'kind': 'masonry', 'z0': 0, 'z1': CUT, 'outer': ring(p), 'holes': [ring(Polygon(h)) for h in p.interiors], '_poly': p}
                  for i, p in enumerate(P.wall_polys)]
     glass_list = []
     for i, w in enumerate(P.windows):
         if not w['full']:
-            wall_list.append({'id': f'sill-{i}', 'kind': 'window_sill_assumption', 'z0': 0, 'z1': SILL, 'outer': ring(w['blob']), 'holes': []})
+            wall_list.append({'id': f'sill-{i}', 'kind': 'window_sill_assumption', 'z0': 0, 'z1': SILL, 'outer': ring(w['blob']), 'holes': [], '_poly': w['blob']})
         for gp in glass_paths(w):
             glass_list.append({'path': [pt(q) for q in gp], 'z0': 0.0 if w['full'] else SILL, 'z1': CUT,
                                'source': P.lay['glass'][0] if w['full'] else P.lay['openings'][0]})
     for i, p in enumerate(P.fix_parapet):
-        wall_list.append({'id': f'parapet-{i}', 'kind': 'masonry_parapet', 'z0': 0, 'z1': 1.0, 'outer': ring(p), 'holes': []})
-    solids = [(w, Polygon(w['outer'])) for w in wall_list]
+        wall_list.append({'id': f'parapet-{i}', 'kind': 'masonry_parapet', 'z0': 0, 'z1': 1.0, 'outer': ring(p), 'holes': [], '_poly': p})
+    # door leaves where she drew them: open, from the hinge to the swing's tip
+    for i, d in enumerate(P.doors + P.fix_leaves):
+        (hx, hy), (tx, ty) = d['hinge'], d['tip']
+        n = math.dist(d['hinge'], d['tip']); ux, uy = (tx - hx) / n, (ty - hy) / n
+        leaf = Polygon([(hx - uy * 0.02, hy + ux * 0.02), (tx - uy * 0.02, ty + ux * 0.02), (tx + uy * 0.02, ty - ux * 0.02), (hx + uy * 0.02, hy - ux * 0.02)])
+        wall_list.append({'id': f'door-{i}', 'kind': 'door_leaf_appearance', 'z0': 0, 'z1': CUT, 'outer': ring(leaf), 'holes': [], '_poly': leaf})
+    solids = [(w, w['_poly']) for w in wall_list]
     outdoor = [P.rooms[o['id']] for o in P.fix_outdoor if o['id'] in P.rooms]
     footprint = unary_union([P.building] + outdoor + P.fix_parapet).buffer(0.001)
     outer = max(geoms(footprint), key=lambda g: g.area)
@@ -72,9 +79,9 @@ def zone_json(P, S, cfg):
         island = max(geoms(island.buffer(0.001).buffer(-0.001)), key=lambda g: g.area)
         clipped = []
         for w in mine:
-            for piece in geoms(Polygon(w['outer']).intersection(near)):
+            for piece in geoms(w['_poly'].intersection(near)):
                 if piece.area < 0.002: continue
-                clipped.append({**w, 'outer': ring(clean(piece))})
+                clipped.append({**{k: v for k, v in w.items() if k != '_poly'}, 'outer': ring(clean(piece)), 'holes': []})
         gl = [g for g in glass_list if LineString([(x / S, y / S) for x, y in g['path']]).distance(poly) < 0.3]
         lp = meta['xy'] if meta['xy'] else [round(poly.representative_point().x, 3), round(poly.representative_point().y, 3)]
         room_list.append({
@@ -109,7 +116,7 @@ def zone_json(P, S, cfg):
         'counter': cfg.get('counter', {'carcass': 0.86, 'top': 0.03, 'why': 'conventional 900 mm worktop'}),
         'zone': ring(outer),
         'floor': [{'outer': ring(outer), 'holes': [ring(s) for s in shaft]}],
-        'walls': wall_list,
+        'walls': [{k: v for k, v in w.items() if k != '_poly'} for w in wall_list],
         'glass': glass_list,
         'pieces': [],
         'rooms': room_list,

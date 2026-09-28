@@ -127,6 +127,7 @@ class Plan:
         pick = lambda names: [pl for n in names for pl in self.L.get(n, [])]
         fx = cfg.get('fixes', {})
         self.fix_doors = [box(*d['box']) for d in fx.get('door_strips', [])]
+        self.fix_leaves = [{'hinge': tuple(d['hinge']), 'tip': tuple(d['tip'])} for d in fx.get('leaves', [])]
         self.fix_dividers = [(d['between'], d['line']) for d in fx.get('dividers', [])]
         self.fix_outdoor = fx.get('outdoor', [])
         self.fix_parapet = [Polygon(p) for p in fx.get('parapet', [])]
@@ -181,7 +182,7 @@ class Plan:
             if edges[1] < 0.3: continue                                      # jamb marks
             if edges[0] < 0.085: continue                                    # one line: a sliding panel or shelf mark
             if any(b.distance(Point(d['hinge'])) < 0.08 and b.distance(Point(d['tip'])) < 0.12 for d in self.doors): continue   # a leaf
-            if any(ds.contains(b.centroid) for ds in self.fix_doors): continue
+            if any(ds.buffer(0.1).intersects(b) for ds in self.fix_doors): continue   # a hand-set door's swing, drawn in segments
             wl = [pl for pl in frame_lines if LineString(pl).within(b.buffer(0.001))]
             full = any(g.within(b.buffer(0.01)) for g in glass_pl)        # glass layer: full-height glazing
             self.windows.append({'blob': clean(b), 'lines': wl, 'full': full})

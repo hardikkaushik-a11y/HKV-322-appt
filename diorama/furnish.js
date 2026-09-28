@@ -25,6 +25,18 @@ export function buildFurnishing({ W, CUT, mesh, rbox, prism, M }) {
     x.fillStyle = '#E8C766'; x.beginPath(); x.arc(64, 40, 30, Math.PI, 0); x.lineWidth = 4; x.strokeStyle = '#E8C766'; x.stroke();
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
   })();
+  const floral = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    x.fillStyle = '#EFE8DD'; x.fillRect(0, 0, 128, 128);
+    let s = 3; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 26; i++) {
+      const px = r() * 128, py = r() * 128, col = ['#7B4A5C', '#5E6E8C', '#9A5A55', '#6F7A5A'][i % 4];
+      x.fillStyle = col; x.globalAlpha = 0.75;
+      for (let k = 0; k < 5; k++) { const a = k * 1.2566; x.beginPath(); x.ellipse(px + Math.cos(a) * 4, py + Math.sin(a) * 4, 4, 2.4, a, 0, Math.PI * 2); x.fill(); }
+      x.fillStyle = '#6F7A5A'; x.beginPath(); x.ellipse(px + 7, py + 6, 5, 2, 0.8, 0, Math.PI * 2); x.fill();
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.5, 4); return t;
+  })();
   const K = {
     linen: phys({ color: 0xF2EEE6, roughness: 0.95, sheen: 0.4, sheenRoughness: 0.8, sheenColor: 0xffffff }),
     cloth: phys({ map: fabric({ base: 0xEDE3D1, seed: 83 }), roughness: 0.9 }),
@@ -42,6 +54,7 @@ export function buildFurnishing({ W, CUT, mesh, rbox, prism, M }) {
     pot: phys({ color: 0xB87A52, roughness: 0.85 }),
     fruit: phys({ color: 0xE39A2B, roughness: 0.5 }),
     tanjore: phys({ map: tanjore, roughness: 0.6, metalness: 0.15 }),
+    floral: phys({ map: floral, roughness: 0.95, side: THREE.DoubleSide, sheen: 0.3 }),
     gilt: phys({ color: 0xC9A04A, metalness: 1, roughness: 0.35 }),
     photo: phys({ color: 0x3A3F44, roughness: 0.4 }),
     mat: phys({ color: 0xF1EDE6, roughness: 0.9 }),
@@ -264,6 +277,18 @@ export function buildFurnishing({ W, CUT, mesh, rbox, prism, M }) {
       } else {
         box(g, w, h, 0.04, 0, y, 0, K.gilt, 0.01);
         box(g, w - 0.08, h - 0.08, 0.006, 0, y, 0.021, K.tanjore, 0.002);
+      }
+      return g;
+    },
+    curtain(p) {
+      // two panels drawn to the sides of the doorway, as in the photo, on a brass rod
+      const g = frame(p), w = p.obb.w, h = top(2.05);
+      const rod = cyl(g, 0.012, 0.012, w + 0.3, 0, h, 0.04, M.brass, 10); rod.rotation.z = Math.PI / 2;
+      for (const s of [-1, 1]) {
+        const pw = w * 0.42, geo = new THREE.PlaneGeometry(pw, h - 0.02, 12, 1), pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin((pos.getX(i) / pw + 0.5) * Math.PI * 6) * 0.025);
+        geo.computeVertexNormals();
+        const m = add(g, geo, K.floral, s * (w / 2 - pw / 2 + 0.08), h / 2 - 0.01, 0.05); m.castShadow = true;
       }
       return g;
     },

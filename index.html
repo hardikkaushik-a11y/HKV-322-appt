@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HKV-322 · The flat</title>
+<meta name="robots" content="noindex">
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.js", "three/addons/": "./lib/addons/" } }
+</script>
+<style>
+  :root { --bg:#14110E; --ink:#F2EDE4; --dim:#A2978A; --brass:#C9A227; --panel:rgba(29,25,21,.78); --line:rgba(242,237,228,.12); --warn:#D2553F; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); overflow:hidden;
+              font-family:"Avenir Next",Avenir,"Segoe UI",sans-serif; }
+  body { background: radial-gradient(120% 90% at 50% 38%, #2a241e 0%, #17130f 55%, #0e0c0a 100%); }
+  #stage { position:fixed; inset:0; }
+  #stage canvas { display:block; width:100%; height:100%; opacity:0; transition:opacity .8s; }
+  body.ready #stage canvas { opacity:1; }
+  .title { position:fixed; left:28px; top:24px; pointer-events:none; }
+  .title .k { font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--brass); }
+  .title h1 { margin:6px 0 0; font:400 30px/1.1 "Iowan Old Style",Georgia,serif; letter-spacing:.01em; }
+  .title .area { margin-top:5px; font-size:12px; letter-spacing:.03em; color:var(--dim); }
+  .badge { position:fixed; left:28px; top:126px; max-width:360px; padding:10px 13px; border-radius:12px;
+           background:var(--panel); border:1px solid rgba(210,85,63,.45); backdrop-filter:blur(10px);
+           font-size:11.5px; line-height:1.5; color:var(--ink); }
+  .badge b { color:var(--warn); display:block; font-size:10px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+  .credit { position:fixed; left:28px; bottom:22px; max-width:520px; font-size:12px; line-height:1.55; color:var(--dim); }
+  .credit b { color:var(--ink); font-weight:500; }
+  .hint { position:fixed; right:28px; bottom:22px; font-size:11px; letter-spacing:.08em; color:var(--dim); text-align:right; }
+  .load { position:fixed; inset:0; display:grid; place-items:center; color:var(--dim); font-size:12px; letter-spacing:.2em; text-transform:uppercase; }
+  body.ready .load { display:none; }
+  #labels { position:fixed; inset:0; pointer-events:none; }
+  .room { position:absolute; left:0; top:0; pointer-events:auto; cursor:pointer; white-space:nowrap;
+          padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:rgba(20,17,14,.62);
+          color:var(--ink); font:500 11px/1.2 "Avenir Next",Avenir,sans-serif; letter-spacing:.04em;
+          backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); transition:background .2s,border-color .2s,opacity .25s; }
+  .room:hover { background:rgba(201,162,39,.25); border-color:var(--brass); }
+  .room i { display:none; font-style:normal; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass); margin-top:2px; }
+  .room:hover i { display:block; }
+  .room.est i.tag { display:block; color:var(--warn); }
+  .room.minor { opacity:.55; }
+  .room[hidden] { display:none; }
+  .tools { position:fixed; right:28px; top:22px; display:flex; gap:6px; z-index:3; }
+  .tools button { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; cursor:pointer;
+                  background:var(--panel); border:1px solid var(--line); color:var(--ink); }
+  .tools button:hover { border-color:var(--brass); }
+  .tools button.on { border-color:var(--brass); background:rgba(201,162,39,.2); }
+  .tools svg { width:17px; height:17px; }
+  #walkbar { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:3; display:none; align-items:center; gap:14px;
+             padding:8px 8px 8px 16px; border-radius:999px; background:var(--panel); border:1px solid var(--line);
+             backdrop-filter:blur(14px); font-size:12px; color:var(--dim); white-space:nowrap; }
+  #walkbar button { padding:7px 14px; border-radius:999px; border:1px solid var(--brass); background:transparent; color:var(--ink); font-size:12px; cursor:pointer; }
+  body.walking #walkbar { display:flex; }
+  body.walking .title, body.walking .badge, body.walking .credit, body.walking .hint, body.walking #labels { display:none; }
+  .fail { position:fixed; left:12px; right:12px; bottom:20px; z-index:50; padding:12px 14px; border-radius:12px; background:rgba(28,22,18,.92); border:1px solid var(--line); color:#E8DFD3; font-size:12.5px; line-height:1.4; }
+  @media (max-width:700px){
+    .title h1{font-size:22px} .badge{max-width:none; right:16px} .credit{right:20px; left:20px; bottom:40px; font-size:11px}
+    .hint{left:20px; right:auto; bottom:14px; text-align:left}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="load">Building the shell</div>
+<div class="title"><div class="k" id="t-k">HKV-322 · Hauz Khas</div><h1 id="t-h">The flat</h1><div class="area" id="t-a"></div></div>
+<div class="badge"><b>Neutral shell</b>Digitized from the ALD-01 plan drawing, not a DXF. Room sizes with a dashed outline are read estimates, not printed dimensions &mdash; see the credit line. No furniture or finishes yet: nothing has been designed for this flat.</div>
+<div class="tools">
+  <button id="walk-btn" title="Walk the flat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="13" cy="4.5" r="1.7"/><path d="M13 8l-1 5-3 3M13 8l4 2 2 5M12 13l4 1.5M9 16l-2 5M13 13l1 8"/></svg>
+  </button>
+  <button id="help-btn" title="How to use this">?</button>
+</div>
+<div id="labels"></div>
+<div class="credit" id="credit">Ar. Shivangi Kaushik · Studio Spindle &mdash; ALD-01 R1, 04-08-2026</div>
+<div class="hint" id="hint">Drag to orbit · Scroll to zoom · Click a room to open it</div>
+<div id="walkbar"><span>Drag to look · WASD to move</span><button id="walk-exit">Esc &middot; Back to plan</button></div>
+<script>
+(() => {
+  let why = '';
+  addEventListener('error', (e) => { why ||= e.message || String(e.error || ''); });
+  addEventListener('unhandledrejection', (e) => { why ||= String(e.reason?.message || e.reason || ''); });
+  setTimeout(() => {
+    if (document.body.classList.contains('ready')) return;
+    const n = document.createElement('div'); n.className = 'fail';
+    n.textContent = "The model didn't load on this browser. Reload to try again." + (why ? ' (' + why + ')' : '');
+    document.body.appendChild(n);
+  }, 20000);
+})();
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

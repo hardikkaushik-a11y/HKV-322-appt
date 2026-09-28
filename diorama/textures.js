@@ -285,3 +285,41 @@ export function terrazzo({ base, chips = [0x9C8466, 0xE8E1D4, 0x6E6255, 0xB9A07E
   x.globalAlpha = 1;
   return finish(c, tile);
 }
+
+// Persian rug: a red field of small motifs, a central medallion and corner spandrels,
+// inside navy and ivory borders. Drawn once across the rug (repeat 1 on 0-1 UVs).
+export function persian({ base = 0x8E2E24, ink = 0x1F2A44, gold = 0xC49A5C, ivory = 0xE8DCC4, seed = 43 }) {
+  const N = 512, [c, x] = canvas(N), r = rng(seed), n = noise2(seed, 9);
+  const B = new THREE.Color(base), img = x.createImageData(N, N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = 0.9 + 0.14 * n(i / N, j / N), o = (j * N + i) * 4;
+    img.data[o] = B.r * 255 * k; img.data[o + 1] = B.g * 255 * k; img.data[o + 2] = B.b * 255 * k; img.data[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  const band = (inset, w, col) => { x.strokeStyle = hex(col); x.lineWidth = w; x.strokeRect(inset + w / 2, inset + w / 2, N - 2 * inset - w, N - 2 * inset - w); };
+  // field motifs: a lattice of small flowers
+  for (let j = 70; j < N - 70; j += 26) for (let i = 70 + (j / 26 % 2) * 13; i < N - 70; i += 26) {
+    x.fillStyle = hex(r() < 0.5 ? gold : ivory); x.globalAlpha = 0.55;
+    x.beginPath(); for (let p = 0; p < 4; p++) { const a = p * Math.PI / 2; x.ellipse(i + Math.cos(a) * 3.2, j + Math.sin(a) * 3.2, 2.6, 1.5, a, 0, Math.PI * 2); } x.fill();
+    x.fillStyle = hex(ink); x.beginPath(); x.arc(i, j, 1.4, 0, Math.PI * 2); x.fill();
+  }
+  x.globalAlpha = 1;
+  // medallion
+  const M = N / 2;
+  const lozenge = (s, col) => { x.fillStyle = hex(col); x.beginPath(); x.moveTo(M, M - s); x.lineTo(M + s * 0.78, M); x.lineTo(M, M + s); x.lineTo(M - s * 0.78, M); x.closePath(); x.fill(); };
+  lozenge(96, ink); lozenge(84, gold); lozenge(72, base); lozenge(52, ivory); lozenge(36, ink); lozenge(16, gold);
+  for (let p = 0; p < 16; p++) {
+    const a = p * Math.PI / 8; x.fillStyle = hex(p % 2 ? gold : ivory);
+    x.beginPath(); x.arc(M + Math.cos(a) * 74, M + Math.sin(a) * 74 * 1.2, 4, 0, Math.PI * 2); x.fill();
+  }
+  // spandrels
+  for (const [cx, cy] of [[62, 62], [N - 62, 62], [62, N - 62], [N - 62, N - 62]]) {
+    x.fillStyle = hex(ink); x.beginPath(); x.arc(cx + (cx < M ? -14 : 14), cy + (cy < M ? -14 : 14), 38, 0, Math.PI * 2); x.globalAlpha = 0.8; x.fill();
+  }
+  x.globalAlpha = 1;
+  band(4, 20, ink); band(26, 3, gold); band(30, 8, ivory); band(40, 3, gold);
+  for (let i = 16; i < N - 16; i += 16) for (const [px, py] of [[i, 14], [i, N - 14], [14, i], [N - 14, i]]) {
+    x.fillStyle = hex(r() < 0.5 ? gold : base); x.beginPath(); x.arc(px, py, 3.2, 0, Math.PI * 2); x.fill();
+  }
+  return finish(c, 1);
+}

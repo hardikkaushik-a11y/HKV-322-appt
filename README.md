@@ -1,68 +1,58 @@
 # HKV-322 - The flat
 
-Residence for Mr. Jnaneswar Sen, 322 Hauz Khas Apartments, New Delhi. Architect: Ar. Shivangi
-Kaushik, Studio Spindle. This is the same kind of thing as `b34-presentation`'s `/diorama/` -
-the flat as a 3D model built straight from the plan, not from any render or SketchUp pipeline -
-at a much earlier stage: there is no approved design for this flat yet, only the ALD-01 layout
-drawing.
-
-Serve the folder locally, because the model loads JSON with a browser request:
+A flat in Hauz Khas, New Delhi. Layout: Ar. Shivangi Kaushik,
+Studio Spindle (ALD-01 R1). A diorama of the whole flat in the browser, the same product as
+B-34's `/diorama/` (and, behind that, Ryan Sael's *Set the Mood*): the flat cut open on a
+plinth at door-head height, every room furnished, finishes you drag onto surfaces, a mood
+meter, the sun through the day, furniture you can move, and a walk mode.
 
 ```bash
-python3 serve.py 8747      # then http://127.0.0.1:8747
+python3 serve.py 8747      # then http://127.0.0.1:8747/diorama/
 ```
 
-## What this is
+## Where it comes from
 
-A neutral spatial shell: every room from ALD-01, at its real footprint and ceiling height,
-shown as a whole-flat cutaway on a plinth. Drag to orbit, scroll to zoom, click a room to fly
-to it. A walk button drops you inside at eye height with drag-to-look and WASD.
-
-There is no furniture and no finish in this build, because nothing has been designed for this
-flat yet - see `GOAL.md`-style reasoning in `b34-presentation`: an unfinished space stays a
-neutral shell rather than inventing an approved look for it. Doors and windows are not modelled
-either, so walk mode currently shows closed boxes with no opening between rooms; it walks and
-collides correctly but doesn't yet let you see room to room. Digitizing door and window
-positions from the drawing is the natural next pass if the walk view needs to carry more than
-the orbit view already does.
-
-## Where the geometry comes from
-
-`assets/layout/rooms.json`. There is no DXF or CAD export for this project (unlike B-34's
-`assets/cad-draft/`), only the ALD-01 PDF, so the room list was built by:
-
-1. Rendering the PDF page to a raster image and calibrating pixels to real-world metres from
-   the sheet's own title block (A3 page, scale 1:50 - so 1 mm on the page is 50 mm real).
-2. Reading each room's printed width x depth and ceiling height off the sheet where ALD-01
-   dimensions it.
-3. Placing rooms next to each other by the drawing's own adjacency (what borders what), snapped
-   to a shared grid so neighbouring walls line up.
-
-Every room in the JSON carries `"labeled": true` when its width and depth come from ALD-01's
-own printed dimension text, and `"labeled": false` when the sheet doesn't dimension that space
-and the size shown is an eyeballed estimate from the drawing's proportions instead: the Foyer,
-the Servant Toilet, Toilet 1, and the Varandah's depth. Those four are flagged with a dashed
-"estimated" tag on their label in the viewer and should be corrected against a DXF or an updated
-dimension set before anyone treats them as exact. Bay windows, window seats and the kitchen's
-L-shaped notch are simplified to plain rectangles for this pass; wall thickness is a flat 12 cm
-guess, not read off the drawing (ALD-01 gives no wall thickness).
-
-Total footprint as digitized: about 146 m² / 1,570 sq ft. That is a sum of the individual room
-boxes above, not a surveyed number, and will move once the estimated rooms and the simplified
-alcoves are corrected.
+- **Walls, windows, doors, rooms**: read out of the ALD-01 PDF by `build/build_zone.py`. The
+  PDF is a vector export that kept the drawing's CAD layers (RH-RCC BRICK, RH-DOOR WINDOW,
+  RH-GLASS, the furniture and plumbing layers), so this reads the same sources B-34's DXF build
+  read, not a trace of a picture. Door openings are closed exactly across each jamb (found from
+  the swing arc), not with a blanket fill, so the bay window, window seats, wardrobe niches and
+  the kitchen's L keep their drawn shape.
+- **Scale**: the sheet says 1:50 @ A3 but was plotted to fit. Every printed dimension reads
+  0.914 of its drawn length wall face to face (Bedroom 1 10'-7", Kitchen 9'-10", Living 18'-6",
+  Bedroom 2 14'-5 1/2"), so the plan is scaled by that factor. **For the architect**: Living's
+  11'-4" reads 0.978 instead; worth confirming on site.
+- **Furniture**: `build/build_pieces.py` reads each drawn piece's footprint, size and room from
+  the same PDF and names it from the architect's labels. The drawing's layout is the flat as it
+  is today (it matches the two site photos piece for piece). A few things only in the photos
+  are added and marked `source: "site photo"` in `zone.json`: the Persian rug, sideboard and
+  Tanjore painting, rocking chair, photo frames, brass vase, floor lamps and the fridge.
+- **"Original"**: the flat as it stands today, dressed from the two site photos: beige
+  vitrified tile, warm white walls, teak cupboards and show case, beige sofas, the rust daybed,
+  dark wood chairs and tables, the red Persian rug. Cozy, Bright and Moody are concepts.
+- **Not drawn, so not invented**: Bedroom 2 has only its wardrobe on ALD-01; the kitchen has
+  only its counter; no branded products are specified yet (the Products tab stays hidden).
 
 ## Files
 
-- `index.html` / `app.js` - the whole app: fetches `assets/layout/rooms.json`, extrudes each
-  room's floor and walls to its own ceiling height with a dark section-cut cap (same cutaway
-  trick as B-34's diorama), places floating name + area labels, and drives orbit and walk mode.
-- `assets/layout/rooms.json` - the digitized room list; see above.
-- `lib/` - three.js and OrbitControls, vendored (not from a CDN) for the same reason B-34 does
-  it: served over `file://` a page can still load a `<script>`, but not a module's own
-  `XMLHttpRequest`import, and `serve.py` exists for browsers that block local files outright.
+- `diorama/` - the app. The engine (`diorama.js`, `configurator.js`, `walk.js`,
+  `textures.js`) is B-34's, with HKV-322's rooms, titles and a cutaway for tall joinery
+  (a wardrobe or show case on a wall facing you trims to knee height like the walls do).
+  `furnish.js` gives each HKV-322 piece its shape; `products.js` is an empty stand-in.
+- `assets/diorama/zone.json` - the flat: walls, glass, rooms, spaces and pieces.
+- `build/` - rebuilds `zone.json` from the PDF:
 
-## Next, if this flat gets a design pass
+```bash
+cd build
+ALD01_PDF=/path/to/HKV_322_LAYOUT_R1.pdf python3 build_zone.py --report --write ../assets/diorama/zone.json
+ALD01_PDF=/path/to/HKV_322_LAYOUT_R1.pdf python3 build_pieces.py --write
+```
 
-Follow B-34's own pattern once real design material exists: keep this shell as the neutral
-baseline for undesigned rooms, and only add colour, furniture or a photoreal tour to a room once
-there is an approved render or V-Ray output to source it from. Don't invent finishes here.
+The PDF and the site photos are not in the repo: the drawing carries the client's name and
+address and one photo shows a member of the family at home.
+
+## Next
+
+- 360 panoramas per room, as B-34's tour (V-Ray spherical panoramas from the architect once
+  the redesign exists).
+- The architect's redesign as a second set of finishes and furniture next to Original.

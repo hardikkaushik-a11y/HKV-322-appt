@@ -41,6 +41,7 @@ MANUAL = {
     # The living room's east door is drawn with straight segments, not an arc: its
     # opening runs from the wall's end (y 7.50) down to the room's south wall.
     'door_strips': [box(19.82, 6.36, 20.15, 7.52)],
+    'leaves': [{'hinge': (19.86, 6.47), 'tip': (18.96, 6.47)}],
     # Open-plan boundaries the drawing marks with beams, not walls (as B-34's
     # "inferred" rooms): foyer | dining, dining | living, and the master bedroom's open
     # passage into the study.
@@ -168,7 +169,7 @@ for b in blobs:
     if edges[1] < 0.3: continue                                      # jamb marks
     if edges[0] < 0.085: continue                                    # a single line: a sliding panel or shelf mark
     if any(b.distance(Point(d['hinge'])) < 0.08 and b.distance(Point(d['tip'])) < 0.12 for d in doors): continue   # a leaf
-    if any(ds.contains(b.centroid) for ds in MANUAL['door_strips']): continue
+    if any(ds.buffer(0.1).intersects(b) for ds in MANUAL['door_strips']): continue   # that door's swing, drawn in segments
     wl = [pl for pl in frame_lines if LineString(pl).within(b.buffer(0.001))]
     full = any(g.within(b.buffer(0.01)) for g in glass_pl)        # RH-GLASS: full-height glazing
     windows.append({'blob': clean(b), 'lines': wl, 'full': full})
@@ -241,17 +242,23 @@ if __name__ == '__main__' and '--write' in sys.argv:
     out_path = sys.argv[sys.argv.index('--write') + 1]
     wall_list = []
     for i, p in enumerate(wall_polys):
-        wall_list.append({'id': f'wall-{i}', 'kind': 'masonry', 'z0': 0, 'z1': CUT, 'outer': ring(p), 'holes': [ring(Polygon(h)) for h in p.interiors]})
+        wall_list.append({'id': f'wall-{i}', 'kind': 'masonry', 'z0': 0, 'z1': CUT, 'outer': ring(p), 'holes': [ring(Polygon(h)) for h in p.interiors], '_poly': p})
     glass_list = []
     for i, w in enumerate(windows):
         if not w['full']:
-            wall_list.append({'id': f'sill-{i}', 'kind': 'window_sill_assumption', 'z0': 0, 'z1': SILL, 'outer': ring(w['blob']), 'holes': []})
+            wall_list.append({'id': f'sill-{i}', 'kind': 'window_sill_assumption', 'z0': 0, 'z1': SILL, 'outer': ring(w['blob']), 'holes': [], '_poly': w['blob']})
         for gp in glass_paths(w):
             glass_list.append({'path': [pt(q) for q in gp], 'z0': 0.0 if w['full'] else SILL, 'z1': CUT, 'source': 'RH-GLASS' if w['full'] else 'RH-DOOR WINDOW'})
 
     for i, p in enumerate(MANUAL['parapet']):
-        wall_list.append({'id': f'parapet-{i}', 'kind': 'masonry_parapet', 'z0': 0, 'z1': 1.0, 'outer': ring(p), 'holes': []})
-    solids = [(w, Polygon(w['outer'])) for w in wall_list]
+        wall_list.append({'id': f'parapet-{i}', 'kind': 'masonry_parapet', 'z0': 0, 'z1': 1.0, 'outer': ring(p), 'holes': [], '_poly': p})
+    # door leaves where she drew them: open, from the hinge to the swing's tip
+    for i, d in enumerate(doors + MANUAL['leaves']):
+        (hx, hy), (tx, ty) = d['hinge'], d['tip']
+        n = math.dist(d['hinge'], d['tip']); ux, uy = (tx - hx) / n, (ty - hy) / n
+        leaf = Polygon([(hx - uy * 0.02, hy + ux * 0.02), (tx - uy * 0.02, ty + ux * 0.02), (tx + uy * 0.02, ty - ux * 0.02), (hx + uy * 0.02, hy - ux * 0.02)])
+        wall_list.append({'id': f'door-{i}', 'kind': 'door_leaf_appearance', 'z0': 0, 'z1': CUT, 'outer': ring(leaf), 'holes': [], '_poly': leaf})
+    solids = [(w, w['_poly']) for w in wall_list]
     footprint = unary_union([building] + [rooms[k] for k in ('varandah', 'varandah2')] + MANUAL['parapet']).buffer(0.001)
     outer = max(geoms(footprint), key=lambda g: g.area)
     shaft = [h for h in holes if not any(h.equals(r) for r in rooms.values())]
@@ -265,9 +272,9 @@ if __name__ == '__main__' and '--write' in sys.argv:
         island = max(geoms(island.buffer(0.001).buffer(-0.001)), key=lambda g: g.area)
         clipped = []
         for w in mine:
-            for piece in geoms(Polygon(w['outer']).intersection(near)):
+            for piece in geoms(w['_poly'].intersection(near)):
                 if piece.area < 0.002: continue
-                clipped.append({**w, 'outer': ring(clean(piece))})
+                clipped.append({**{k: v for k, v in w.items() if k != '_poly'}, 'outer': ring(clean(piece)), 'holes': []})
         gl = [g for g in glass_list if LineString([(x / SCALE, y / SCALE) for x, y in g['path']]).distance(poly) < 0.3]
         lp = xy if xy else [round(poly.representative_point().x, 3), round(poly.representative_point().y, 3)]
         room_list.append({
@@ -301,7 +308,7 @@ if __name__ == '__main__' and '--write' in sys.argv:
         'counter': {'carcass': 0.86, 'top': 0.03, 'why': 'conventional 900 mm worktop; no appliance heights on ALD-01'},
         'zone': ring(outer),
         'floor': [{'outer': ring(outer), 'holes': [ring(s) for s in shaft]}],
-        'walls': wall_list,
+        'walls': [{k: v for k, v in w.items() if k != '_poly'} for w in wall_list],
         'glass': glass_list,
         'pieces': [],
         'rooms': room_list,
